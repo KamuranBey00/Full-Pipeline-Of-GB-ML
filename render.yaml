@@ -1,0 +1,9 @@
+# Render Blueprint — infrastructure as code for the API service.
+services:
+  - type: web
+    name: predictive-maintenance-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass   # deploy only after GitHub Actions CI is green
