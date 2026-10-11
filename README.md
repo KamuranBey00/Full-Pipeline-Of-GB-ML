@@ -20,8 +20,8 @@ scheduled *before* an unplanned breakdown.
 | 4 | Training pipeline + MLflow tracking | ✅ done |
 | 5 | FastAPI service (`/predict`, `/health`, batch) | ✅ done |
 | 6 | Docker + pytest | ✅ done |
-| 7 | CI/CD (GitHub Actions) | ⏳ next |
-| 8 | Monitoring / data drift (Evidently) | ⬜ |
+| 7 | CI/CD (GitHub Actions) | ✅ done |
+| 8 | Monitoring / data drift (Evidently) | ⏳ next |
 | 9 | Live demo (Render + Streamlit) | ⬜ |
 
 ## Structure
