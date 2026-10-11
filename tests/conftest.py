@@ -22,3 +22,12 @@ RISKY = {"type": "L", "air_temperature": 298.9, "process_temperature": 309.0,
 # A typical healthy reading (the /docs example).
 NORMAL = {"type": "L", "air_temperature": 298.1, "process_temperature": 308.6,
           "rotational_speed": 1551, "torque": 42.8, "tool_wear": 108}
+
+
+@pytest.fixture(autouse=True)
+def tmp_prediction_log(tmp_path, monkeypatch):
+    """Keep test traffic out of the real logs/predictions.jsonl (drift input)."""
+    from api import main
+    log = tmp_path / "predictions.jsonl"
+    monkeypatch.setattr(main, "PREDICTION_LOG", log)
+    return log

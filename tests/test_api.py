@@ -45,3 +45,11 @@ def test_model_not_loaded_503(monkeypatch):
     monkeypatch.setattr(main.service, "pipeline", None)
     assert client.post("/predict", json=RISKY).status_code == 503
     assert client.get("/health").json()["status"] == "degraded"
+
+
+@requires_model
+def test_predictions_are_logged(tmp_prediction_log):
+    client.post("/predict/batch", json={"readings": [NORMAL, RISKY]})
+    lines = tmp_prediction_log.read_text().splitlines()
+    assert len(lines) == 2
+    assert '"tool_wear": 220' in lines[1] and "failure_probability" in lines[1]

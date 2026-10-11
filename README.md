@@ -21,8 +21,8 @@ scheduled *before* an unplanned breakdown.
 | 5 | FastAPI service (`/predict`, `/health`, batch) | ✅ done |
 | 6 | Docker + pytest | ✅ done |
 | 7 | CI/CD (GitHub Actions) | ✅ done |
-| 8 | Monitoring / data drift (Evidently) | ⏳ next |
-| 9 | Live demo (Render + Streamlit) | ⬜ |
+| 8 | Monitoring / data drift (Evidently) | ✅ done |
+| 9 | Live demo (Render + Streamlit) | ⏳ next |
 
 ## Structure
 
@@ -35,7 +35,8 @@ predictive-maintenance/
 │   ├── eda.py       # exploratory analysis -> prints + saves figures
 │   ├── features.py  # feature engineering + preprocessing (one-hot, drops)
 │   ├── train.py     # baseline vs RF vs GB, metrics, threshold tuning, save
-│   └── explain.py   # SHAP + permutation importance (global + local)
+│   ├── explain.py   # SHAP + permutation importance (global + local)
+│   └── monitor.py   # Evidently drift report: training data vs API traffic
 ├── api/             # FastAPI service
 │   ├── schemas.py   # Pydantic request/response validation
 │   ├── service.py   # model loading + inference (reuses feature engineering)
@@ -149,6 +150,27 @@ curl -X POST http://127.0.0.1:8000/predict -H "Content-Type: application/json" \
 
 Input is validated by Pydantic: an invalid `type` or out-of-range sensor value
 returns HTTP **422** automatically — no bad data reaches the model.
+
+## Monitoring (Phase 8)
+
+Every request to `/predict` and `/predict/batch` is appended to
+`logs/predictions.jsonl` (raw inputs + predicted probability). `monitor.py`
+compares that live traffic against the **training split** with Evidently and
+writes `reports/drift_report.html`.
+
+```bash
+python monitor.py              # real API traffic vs training data
+python monitor.py --simulate   # demo: shifts the test split (+3 K air, +60 min wear)
+```
+
+Drift is judged with **statistical tests** (KS for sensors, chi-square for `Type`,
+p < 0.05) rather than Evidently's default distance metrics. Distances ignore sample
+size: on a 50-row batch of perfectly normal traffic they flagged 3/6 features as
+drifted, whereas the tests correctly flag 0/6. On the simulated shift they flag
+exactly the two shifted features (air temperature, tool wear).
+
+With Docker, mount the log folder to keep traffic on the host:
+`docker run -d -p 8000:8000 -v ./logs:/app/logs pm-api`
 
 ## Dataset
 

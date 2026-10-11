@@ -70,3 +70,11 @@ MLRUNS_DIR = ROOT / "mlruns"
 MLFLOW_DB_PATH = ROOT / "mlflow.db"
 MLFLOW_TRACKING_URI = f"sqlite:///{MLFLOW_DB_PATH.as_posix()}"
 MLFLOW_EXPERIMENT_NAME = "predictive-maintenance"
+
+# ---------------------------------------------------------------------------
+# Monitoring (Phase 8) — the API appends every scored reading here; monitor.py
+# compares these live inputs against the training data to detect drift.
+# Git-ignored: it is runtime data, not source.
+# ---------------------------------------------------------------------------
+PREDICTION_LOG = ROOT / "logs" / "predictions.jsonl"
+DRIFT_REPORT = REPORTS_DIR / "drift_report.html"

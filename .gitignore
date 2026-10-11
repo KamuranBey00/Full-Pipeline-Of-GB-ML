@@ -12,3 +12,5 @@ models/*
 mlruns/
 mlartifacts/
 mlflow.db
+logs/
+reports/drift_report.html

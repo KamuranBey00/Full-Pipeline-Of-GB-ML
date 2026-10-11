@@ -26,7 +26,11 @@ for _p in (HERE, ROOT, ROOT / "src"):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
+import json
+from datetime import datetime, timezone
+
 from fastapi import FastAPI, HTTPException
+from config import PREDICTION_LOG
 from schemas import (SensorReading, BatchRequest, PredictionResponse,
                      HealthResponse)
 from service import PredictionService
@@ -48,6 +52,17 @@ except FileNotFoundError as e:
     # Don't crash the server: /health will report the model as not loaded,
     # which is the correct, observable behaviour for an ops team.
     print(f"[api] WARNING: {e}")
+
+
+def log_predictions(readings: list[dict], results: list[dict]) -> None:
+    """Append each scored reading to a JSONL log — the 'current' data that
+    monitor.py compares against training data to detect drift (Phase 8)."""
+    PREDICTION_LOG.parent.mkdir(parents=True, exist_ok=True)
+    ts = datetime.now(timezone.utc).isoformat()
+    with PREDICTION_LOG.open("a", encoding="utf-8") as f:
+        for r, p in zip(readings, results):
+            f.write(json.dumps({"ts": ts, **r,
+                                "failure_probability": p["failure_probability"]}) + "\n")
 
 
 @app.get("/")
@@ -74,8 +89,10 @@ def predict(reading: SensorReading):
     if not service.is_ready:
         # 503 = service temporarily unavailable (model not loaded)
         raise HTTPException(status_code=503, detail="Model not loaded.")
-    result = service.predict([reading.model_dump()])[0]
-    return result
+    readings = [reading.model_dump()]
+    results = service.predict(readings)
+    log_predictions(readings, results)
+    return results[0]
 
 
 @app.post("/predict/batch", response_model=list[PredictionResponse])
@@ -85,4 +102,7 @@ def predict_batch(request: BatchRequest):
         raise HTTPException(status_code=503, detail="Model not loaded.")
     if not request.readings:
         raise HTTPException(status_code=400, detail="No readings provided.")
-    return service.predict([r.model_dump() for r in request.readings])
+    readings = [r.model_dump() for r in request.readings]
+    results = service.predict(readings)
+    log_predictions(readings, results)
+    return results

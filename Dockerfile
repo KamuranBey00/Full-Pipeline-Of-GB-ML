@@ -12,6 +12,7 @@ COPY api/ api/
 COPY models/best_model.joblib models/
 
 RUN useradd --create-home appuser
+RUN mkdir logs && chown appuser logs   # API writes predictions.jsonl here
 USER appuser
 
 EXPOSE 8000
