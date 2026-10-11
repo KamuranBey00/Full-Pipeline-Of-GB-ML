@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      # Serving deps + test tools only (no shap/mlflow) - what the tests exercise.
+      - run: pip install -r requirements-api.txt pytest==9.1.1 httpx==0.28.1
+      - run: python -m pytest -q
+
+  docker:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t pm-api .
+      - name: Smoke test container
+        run: |
+          docker run -d --name pm-api -p 8000:8000 pm-api
+          for i in $(seq 1 30); do curl -sf localhost:8000/health && break; sleep 1; done
+          curl -sf localhost:8000/health | grep -q '"model_loaded":true'

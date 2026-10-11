@@ -1,0 +1,104 @@
+{
+  "comparison": {
+    "baseline_dummy": {
+      "cv_pr_auc_mean": 0.0339,
+      "cv_pr_auc_std": 0.0,
+      "test_pr_auc": 0.034,
+      "test_roc_auc": 0.5,
+      "default_0.5": {
+        "threshold": 0.5,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "confusion_matrix": [
+          [
+            1932,
+            0
+          ],
+          [
+            68,
+            0
+          ]
+        ]
+      }
+    },
+    "random_forest": {
+      "cv_pr_auc_mean": 0.8905,
+      "cv_pr_auc_std": 0.0296,
+      "test_pr_auc": 0.8721,
+      "test_roc_auc": 0.9781,
+      "default_0.5": {
+        "threshold": 0.5,
+        "precision": 0.9615,
+        "recall": 0.7353,
+        "f1": 0.8333,
+        "confusion_matrix": [
+          [
+            1930,
+            2
+          ],
+          [
+            18,
+            50
+          ]
+        ]
+      }
+    },
+    "gradient_boosting": {
+      "cv_pr_auc_mean": 0.9102,
+      "cv_pr_auc_std": 0.0214,
+      "test_pr_auc": 0.9014,
+      "test_roc_auc": 0.9706,
+      "default_0.5": {
+        "threshold": 0.5,
+        "precision": 1.0,
+        "recall": 0.7941,
+        "f1": 0.8852,
+        "confusion_matrix": [
+          [
+            1932,
+            0
+          ],
+          [
+            14,
+            54
+          ]
+        ]
+      }
+    }
+  },
+  "best_model": "gradient_boosting",
+  "chosen_threshold": 0.15830238980558461,
+  "test_default": {
+    "threshold": 0.5,
+    "precision": 1.0,
+    "recall": 0.7941,
+    "f1": 0.8852,
+    "confusion_matrix": [
+      [
+        1932,
+        0
+      ],
+      [
+        14,
+        54
+      ]
+    ]
+  },
+  "test_tuned": {
+    "threshold": 0.1583,
+    "precision": 0.8406,
+    "recall": 0.8529,
+    "f1": 0.8467,
+    "confusion_matrix": [
+      [
+        1921,
+        11
+      ],
+      [
+        10,
+        58
+      ]
+    ]
+  }
+}

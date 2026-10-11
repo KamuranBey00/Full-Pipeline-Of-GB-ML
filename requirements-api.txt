@@ -1,0 +1,9 @@
+# Serving-only deps (Docker image). Versions pinned to match the env that
+# trained models/best_model.joblib (project venv) — sklearn/numpy must match to unpickle safely.
+pandas==2.3.3
+numpy==2.2.6
+scikit-learn==1.7.2
+joblib==1.6.0
+fastapi==0.143.0
+pydantic==2.14.0
+uvicorn[standard]==0.54.0
