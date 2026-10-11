@@ -13,61 +13,152 @@ scheduled *before* an unplanned breakdown.
 **Live API:** https://predictive-maintenance-api-wg6l.onrender.com/docs
 (Render free tier — the first request after idle takes ~1 min to wake up)
 
-## Status
+## Highlights
 
-| Phase | What | State |
-|-------|------|-------|
-| 0 | Repo scaffold, config, reproducible paths | ✅ done |
-| 1 | Data download + **EDA** (figures + findings) | ✅ done |
-| 2 | Baseline → Random Forest → Gradient Boosting, proper metrics, threshold tuning | ✅ done |
-| 3 | Explainability (SHAP, permutation importance) | ✅ done |
-| 4 | Training pipeline + MLflow tracking | ✅ done |
-| 5 | FastAPI service (`/predict`, `/health`, batch) | ✅ done |
-| 6 | Docker + pytest | ✅ done |
-| 7 | CI/CD (GitHub Actions) | ✅ done |
-| 8 | Monitoring / data drift (Evidently) | ✅ done |
-| 9 | Live demo (Render + Streamlit) | ✅ done |
+- **Leakage caught and removed** — the five failure-mode flags match the target in 99.7% of rows.
+- **Right metric for rare events** — models compared on PR-AUC, not accuracy (3.4% failure rate).
+- **Business-driven threshold** — tuned without test leakage to catch ≥85% of failures.
+- **Physics-informed features** — all three engineered features land in the top 5 by importance.
+- **No train/serve skew** — the API reuses the exact training feature code.
+- **Production plumbing** — MLflow tracking, Docker, 15 pytest tests, GitHub Actions CI,
+  Evidently drift monitoring, auto-deploy to Render only after CI passes.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    A[(AI4I 2020 CSV)] --> B[data.py<br/>load + validate]
+    B --> C[features.py<br/>leakage drop + engineered features]
+    C --> D[train.py<br/>Dummy vs RF vs GB<br/>threshold tuning]
+    D --> E[(models/best_model.joblib)]
+    D --> F[(MLflow<br/>runs + model)]
+    E --> G[FastAPI<br/>api/ in Docker]
+    G --> H[Streamlit UI<br/>ui/]
+    G --> I[(logs/predictions.jsonl)]
+    I --> J[monitor.py<br/>Evidently drift report]
+    K[GitHub push] --> L[GitHub Actions<br/>pytest + docker build]
+    L -->|green| M[Render deploy]
+    M --> G
+```
+
+| Layer | Tech |
+|-------|------|
+| Data & modeling | pandas, scikit-learn (Gradient Boosting), SHAP |
+| Experiment tracking | MLflow (local SQLite) |
+| Serving | FastAPI + Pydantic, Uvicorn, Docker |
+| Testing & CI | pytest, GitHub Actions |
+| Monitoring | Evidently (KS / chi-square drift tests) |
+| Deployment | Render (API, `render.yaml`), Streamlit Community Cloud (UI) |
+
+## Project phases
+
+| Phase | What was done |
+|-------|---------------|
+| 0 | Repo scaffold, single `config.py` for paths, columns and seeds |
+| 1 | Data download + **EDA**: imbalance, failure modes, leakage check, figures |
+| 2 | Dummy baseline → Random Forest → **Gradient Boosting**, PR-AUC, threshold tuning |
+| 3 | Explainability: permutation importance + SHAP (global and local) |
+| 4 | MLflow tracking: nested runs per model, metrics, figures, logged model |
+| 5 | FastAPI service: `/health`, `/predict`, `/predict/batch` with Pydantic validation |
+| 6 | Docker image (slim, non-root, healthcheck) + pytest suite |
+| 7 | CI with GitHub Actions: tests → Docker build → container smoke test |
+| 8 | Prediction logging + Evidently drift monitoring |
+| 9 | Live deployment: API on Render, Streamlit UI on Streamlit Cloud |
 
 ## Structure
 
 ```
-predictive-maintenance/
-├── data/            # ai4i2020.csv (downloaded, git-ignored)
-├── src/
-│   ├── config.py    # all paths, column names, settings in ONE place
-│   ├── data.py      # download + load + validate
-│   ├── eda.py       # exploratory analysis -> prints + saves figures
-│   ├── features.py  # feature engineering + preprocessing (one-hot, drops)
-│   ├── train.py     # baseline vs RF vs GB, metrics, threshold tuning, save
-│   ├── explain.py   # SHAP + permutation importance (global + local)
-│   └── monitor.py   # Evidently drift report: training data vs API traffic
+.
+├── config.py        # all paths, column names, settings in ONE place
+├── data.py          # download + load + validate
+├── eda.py           # exploratory analysis -> prints + saves figures
+├── features.py      # feature engineering + preprocessing (one-hot, drops)
+├── train.py         # baseline vs RF vs GB, metrics, threshold tuning, MLflow, save
+├── explain.py       # SHAP + permutation importance (global + local)
+├── monitor.py       # Evidently drift report: training data vs API traffic
 ├── api/             # FastAPI service
 │   ├── schemas.py   # Pydantic request/response validation
 │   ├── service.py   # model loading + inference (reuses feature engineering)
-│   └── main.py      # FastAPI app + endpoints
+│   └── main.py      # FastAPI app + endpoints + prediction logging
 ├── ui/              # Streamlit front-end (calls the deployed API, no model code)
 │   ├── streamlit_app.py
 │   └── requirements.txt
-├── reports/         # metrics_summary.json + figures/
-├── models/          # best_model.joblib (pipeline + tuned threshold)
-├── api/             # FastAPI service (later)
 ├── tests/           # pytest: features, service, API
-└── requirements.txt
+├── models/          # best_model.joblib (pipeline + tuned threshold)
+├── reports/         # metrics_summary.json + figures/
+├── data/            # ai4i2020.csv (downloaded, git-ignored)
+├── Dockerfile       # serving image (API only)
+├── render.yaml      # Render blueprint (deploys after CI passes)
+├── .github/workflows/ci.yml
+├── requirements.txt       # full dev/training environment
+└── requirements-api.txt   # minimal serving deps (used by Docker + CI)
 ```
 
 ## Quickstart
 
+Python 3.10. All commands run from the project root.
+
 ```bash
+python -m venv venv
+venv\Scriptsctivate            # Windows  (Linux/macOS: source venv/bin/activate)
 pip install -r requirements.txt
-python src/data.py     # download the dataset into data/
-python src/eda.py      # run EDA: prints findings + writes reports/figures/
-python src/train.py    # train + compare models, tune threshold, save best model
-python src/explain.py  # SHAP + permutation importance -> reports/figures/07..10
 ```
 
-> Note: paths in `config.py` are resolved relative to the project root. If you keep
-> a **flat** layout (all `.py` files at the root), set `ROOT = Path(__file__).resolve().parents[0]`.
-> If you keep them under `src/`, use `parents[1]`.
+**Train the model (optional — a trained model is already committed):**
+
+```bash
+python data.py      # download the dataset into data/
+python eda.py       # EDA: prints findings + writes reports/figures/01..04
+python train.py     # compare models, tune threshold, save model, log to MLflow
+python explain.py   # SHAP + permutation importance -> reports/figures/07..10
+mlflow ui --backend-store-uri sqlite:///mlflow.db   # browse runs at http://127.0.0.1:5000
+```
+
+**Test:**
+
+```bash
+python -m pytest -q
+```
+
+**Serve the API** (either way, then open http://127.0.0.1:8000/docs):
+
+```bash
+uvicorn api.main:app --reload                      # local Python
+docker build -t pm-api .                           # or Docker
+docker run -d -p 8000:8000 -v ./logs:/app/logs pm-api
+```
+
+**Run the UI** against the local API:
+
+```bash
+pip install -r ui/requirements.txt
+API_URL=http://127.0.0.1:8000 streamlit run ui/streamlit_app.py
+# PowerShell: $env:API_URL="http://127.0.0.1:8000"; streamlit run ui/streamlit_app.py
+```
+
+**Check for data drift** (after the API has received traffic):
+
+```bash
+python monitor.py              # or: python monitor.py --simulate
+```
+
+## CI/CD and deployment
+
+1. Every push / PR runs `.github/workflows/ci.yml`: install serving deps → `pytest`
+   → `docker build` → start the container and check `/health` reports the model loaded.
+2. Render watches `main` via `render.yaml` with `autoDeployTrigger: checksPass`, so
+   a commit is deployed **only after CI is green**.
+3. The container reads Render's `PORT` env var (defaults to 8000 locally).
+4. The Streamlit UI on Streamlit Cloud redeploys from `ui/` on every push.
+
+## Security notes
+
+- No secrets in the repo; the API needs none. Future secrets belong in GitHub
+  Secrets / Render environment variables, never in code.
+- All inputs are validated (types, ranges, allowed categories); batch requests are
+  capped at 1000 readings to prevent memory-exhaustion abuse.
+- The container runs as a non-root user; the CI workflow has read-only permissions.
+- Runtime data (`data/`, `logs/`, `mlruns/`, `mlflow.db`) is git-ignored.
 
 ## Key EDA findings (Phase 1)
 
@@ -145,7 +236,7 @@ uvicorn api.main:app --reload
 |--------|------|---------|
 | GET | `/health` | readiness check (model loaded? which threshold?) |
 | POST | `/predict` | score one machine |
-| POST | `/predict/batch` | score many machines in one call |
+| POST | `/predict/batch` | score many machines in one call (max 1000) |
 
 ```bash
 curl -X POST http://127.0.0.1:8000/predict -H "Content-Type: application/json" \
@@ -184,3 +275,7 @@ With Docker, mount the log folder to keep traffic on the host:
 AI4I 2020 Predictive Maintenance Dataset, UCI ML Repository. Synthetic but modeled
 on a real milling machine. Please cite: S. Matzka, "Explainable Artificial
 Intelligence for Predictive Maintenance Applications," 2020.
+
+## License
+
+Code: [MIT](LICENSE). Dataset: UCI ML Repository, CC BY 4.0.

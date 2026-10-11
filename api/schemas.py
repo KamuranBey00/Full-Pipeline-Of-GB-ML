@@ -46,7 +46,9 @@ class SensorReading(BaseModel):
 
 class BatchRequest(BaseModel):
     """Score many machines in one call (realistic for a fleet)."""
-    readings: List[SensorReading]
+    # Upper bound protects the public API: an unbounded list lets one request
+    # exhaust server memory (DoS). 1000 machines per call is plenty for a fleet.
+    readings: List[SensorReading] = Field(..., max_length=1000)
 
 
 class PredictionResponse(BaseModel):

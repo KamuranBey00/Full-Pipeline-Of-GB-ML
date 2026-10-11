@@ -53,3 +53,8 @@ def test_predictions_are_logged(tmp_prediction_log):
     lines = tmp_prediction_log.read_text().splitlines()
     assert len(lines) == 2
     assert '"tool_wear": 220' in lines[1] and "failure_probability" in lines[1]
+
+
+def test_oversized_batch_422():
+    assert client.post("/predict/batch",
+                       json={"readings": [NORMAL] * 1001}).status_code == 422

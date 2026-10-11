@@ -14,3 +14,5 @@ mlartifacts/
 mlflow.db
 logs/
 reports/drift_report.html
+
+CLAUDE.md
