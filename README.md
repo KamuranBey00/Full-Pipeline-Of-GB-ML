@@ -9,6 +9,9 @@ scheduled *before* an unplanned breakdown.
 > check. A model that catches failures early reduces downtime and cost — so we
 > optimise for **catching failures (recall)**, not raw accuracy.
 
+**Live API:** https://predictive-maintenance-api-wg6l.onrender.com/docs
+(Render free tier — the first request after idle takes ~1 min to wake up)
+
 ## Status
 
 | Phase | What | State |
