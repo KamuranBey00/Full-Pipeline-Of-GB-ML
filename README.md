@@ -44,6 +44,9 @@ predictive-maintenance/
 │   ├── schemas.py   # Pydantic request/response validation
 │   ├── service.py   # model loading + inference (reuses feature engineering)
 │   └── main.py      # FastAPI app + endpoints
+├── ui/              # Streamlit front-end (calls the deployed API, no model code)
+│   ├── streamlit_app.py
+│   └── requirements.txt
 ├── reports/         # metrics_summary.json + figures/
 ├── models/          # best_model.joblib (pipeline + tuned threshold)
 ├── api/             # FastAPI service (later)

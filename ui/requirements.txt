@@ -1,0 +1,3 @@
+# UI-only deps: the app just calls the deployed API, no model code here.
+streamlit==1.65.0
+requests==2.34.2
