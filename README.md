@@ -9,6 +9,7 @@ scheduled *before* an unplanned breakdown.
 > check. A model that catches failures early reduces downtime and cost — so we
 > optimise for **catching failures (recall)**, not raw accuracy.
 
+**Live demo (UI):** https://full-pipeline-of-gb-ml-2vjjqpqeetori2jemteza7.streamlit.app/  
 **Live API:** https://predictive-maintenance-api-wg6l.onrender.com/docs
 (Render free tier — the first request after idle takes ~1 min to wake up)
 
@@ -25,7 +26,7 @@ scheduled *before* an unplanned breakdown.
 | 6 | Docker + pytest | ✅ done |
 | 7 | CI/CD (GitHub Actions) | ✅ done |
 | 8 | Monitoring / data drift (Evidently) | ✅ done |
-| 9 | Live demo (Render + Streamlit) | ⏳ next |
+| 9 | Live demo (Render + Streamlit) | ✅ done |
 
 ## Structure
 
